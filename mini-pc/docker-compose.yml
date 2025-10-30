@@ -85,8 +85,8 @@ services:
     environment:
       - DB_CONNECTION_URI=postgres://infisical:infisical@infisical-db:5432/infisical
       - REDIS_URL=redis://infisical-redis:6379
-      - ENCRYPTION_KEY=CHANGE_ME_32_CHAR_HEX  # Generate with: openssl rand -hex 32
-      - AUTH_SECRET=CHANGE_ME_32_CHAR_HEX     # Generate with: openssl rand -hex 32
+      - ENCRYPTION_KEY=CHANGE_ME_32_CHARS  # Generate with: openssl rand -hex 16 (32 hex chars)
+      - AUTH_SECRET=CHANGE_ME_BASE64       # Generate with: openssl rand -base64 32
       - SITE_URL=https://lenny:8080
     depends_on:
       - infisical-db
