@@ -122,6 +122,7 @@ fi
 # Deploy Docker services
 log_info "Deploying Docker services..."
 cd /opt/homelab/mini-pc
+docker compose down 2>/dev/null || true  # Stop existing containers if any
 docker compose pull
 docker compose up -d
 
