@@ -10,12 +10,12 @@ services:
     ports:
       - "3000:3000"   # Gitea HTTPS
       - "3001:3001"   # Grafana HTTPS
-      - "8080:8080"   # Vaultwarden HTTPS
+      - "8080:8080"   # Infisical HTTPS
       - "9090:9090"   # Prometheus HTTPS
       - "9093:9093"   # Alertmanager HTTPS
     depends_on:
       - gitea
-      - vaultwarden
+      - infisical
       - prometheus
       - grafana
       - alertmanager
@@ -51,18 +51,34 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  vaultwarden:
-    image: vaultwarden/server:latest
-    container_name: vaultwarden
-    volumes:
-      - ../vaultwarden:/data
-    expose:
-      - "80"
+  infisical-db:
+    image: postgres:16-alpine
+    container_name: infisical-db
     environment:
-      - SIGNUPS_ALLOWED=true  # Set to false after creating first account
-      - INVITATIONS_ALLOWED=false
-      - WEBSOCKET_ENABLED=true
-      - DOMAIN=https://lenny:8080
+      - POSTGRES_USER=infisical
+      - POSTGRES_PASSWORD=infisical
+      - POSTGRES_DB=infisical
+    volumes:
+      - infisical-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  infisical:
+    image: infisical/infisical:latest
+    container_name: infisical
+    environment:
+      - DB_CONNECTION_URI=postgres://infisical:infisical@infisical-db:5432/infisical
+      - ENCRYPTION_KEY=CHANGE_ME_32_CHAR_HEX  # Generate with: openssl rand -hex 32
+      - AUTH_SECRET=CHANGE_ME_32_CHAR_HEX     # Generate with: openssl rand -hex 32
+      - SITE_URL=https://lenny:8080
+    depends_on:
+      - infisical-db
+    expose:
+      - "8080"
     restart: unless-stopped
     logging:
       driver: json-file
@@ -129,3 +145,4 @@ services:
 volumes:
   prometheus-data:
   grafana-data:
+  infisical-db-data:

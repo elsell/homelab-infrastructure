@@ -9,7 +9,6 @@ secrets/
 
 # Data directories (created on mini PC)
 gitea/
-vaultwarden/
 certs/
 
 # Logs

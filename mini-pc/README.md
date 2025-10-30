@@ -5,7 +5,7 @@ This directory contains all configuration for the mini PC bootstrap node.
 ## Files
 
 - **bootstrap.sh**: Automated setup script (run once)
-- **docker-compose.yml**: Service definitions (Gitea, Vaultwarden, Prometheus, Grafana, Alertmanager)
+- **docker-compose.yml**: Service definitions (Gitea, Infisical, Prometheus, Grafana, Alertmanager)
 - **prometheus.yml**: Prometheus scrape configuration
 - **alert-rules.yml**: Alert definitions (disk, CPU, memory, host down)
 - **alertmanager.yml**: Alert routing (Discord, Home Assistant)
@@ -24,7 +24,7 @@ After bootstrap, the following services will be running with HTTPS:
 | Service | Port | URL | Purpose |
 |---------|------|-----|---------|
 | Gitea | 3000, 2222 | https://lenny:3000 | Infrastructure code mirror |
-| Vaultwarden | 8080 | https://lenny:8080 | Secrets management (Bitwarden compatible) |
+| Infisical | 8080 | https://lenny:8080 | Secrets management for K8s |
 | Prometheus | 9090 | https://lenny:9090 | Metrics collection |
 | Grafana | 3001 | https://lenny:3001 | Dashboards (login: admin/changeme) |
 | Alertmanager | 9093 | https://lenny:9093 | Alert routing |
@@ -55,11 +55,12 @@ After bootstrap, the following services will be running with HTTPS:
    - Add Prometheus datasource: `http://prometheus:9090`
    - Import dashboards: 1860 (Node Exporter), 7249 (K8s)
 
-3. **Set up Vaultwarden**:
+3. **Set up Infisical**:
+   - Generate encryption keys: `openssl rand -hex 32` (run twice for ENCRYPTION_KEY and AUTH_SECRET)
+   - Update docker-compose.yml with the generated keys
+   - Restart: `docker compose restart infisical`
    - Access https://lenny:8080 (accept certificate warning)
    - Create admin account
-   - Set `SIGNUPS_ALLOWED=false` in docker-compose.yml
-   - Restart: `docker compose restart vaultwarden`
 
 4. **Update Alert URLs**:
    - Edit `alertmanager.yml` with your Discord webhook URL

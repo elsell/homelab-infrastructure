@@ -24,13 +24,13 @@ That's it. The script will:
 - Install Docker, node-exporter, git
 - Configure log rotation
 - Clone your infrastructure repo
-- Deploy all services (Gitea, Vaultwarden, Prometheus, Grafana, Alertmanager)
+- Deploy all services (Gitea, Infisical, Prometheus, Grafana, Alertmanager)
 - Set up cron jobs (repo sync, disk cleanup)
 - Create necessary directories
 
 ### 3. Post-Bootstrap Configuration
 
-**Grafana** (http://192.168.2.228:3001)
+**Grafana** (https://lenny:3001)
 ```bash
 # Login: admin / changeme
 # Add Prometheus datasource: http://prometheus:9090
@@ -39,13 +39,21 @@ That's it. The script will:
 #   - Kubernetes Cluster Monitoring (ID: 7249)
 ```
 
-**Vaultwarden** (http://192.168.2.228:8080)
+**Infisical** (https://lenny:8080)
 ```bash
-# Create your admin account (first signup)
-# Then set SIGNUPS_ALLOWED=false in docker-compose.yml and restart
-# Store credentials:
-#   - Terraform vars (XOA, UDM Pro passwords)
-#   - API keys (Backblaze)
+# Generate encryption keys:
+openssl rand -hex 32  # Copy for ENCRYPTION_KEY
+openssl rand -hex 32  # Copy for AUTH_SECRET
+
+# Update docker-compose.yml with generated keys
+cd /opt/homelab/mini-pc
+nano docker-compose.yml
+# Replace CHANGE_ME_32_CHAR_HEX with your generated keys
+
+# Restart Infisical
+docker compose restart infisical
+
+# Access https://lenny:8080 and create admin account
 ```
 
 **Set Discord Webhook for Alerts**
@@ -107,7 +115,7 @@ git clone https://github.com/elsell/homelab-infrastructure.git /opt/homelab
 
 # Create directories
 mkdir -p /opt/homelab-dr/{mirrors,scripts}
-mkdir -p /opt/homelab/{vaultwarden,gitea}
+mkdir -p /opt/homelab/gitea
 
 # Deploy services
 cd /opt/homelab/mini-pc

@@ -96,7 +96,6 @@ fi
 log_info "Creating directory structure..."
 sudo mkdir -p /opt/homelab-dr/mirrors
 sudo mkdir -p /opt/homelab-dr/scripts
-sudo mkdir -p /opt/homelab/vaultwarden
 sudo mkdir -p /opt/homelab/gitea
 sudo chown -R $USER:$USER /opt/homelab /opt/homelab-dr
 
@@ -163,15 +162,17 @@ echo "Bootstrap Complete!"
 echo "========================================="
 echo ""
 echo "Services:"
-echo "  Prometheus:   http://$(hostname -I | awk '{print $1}'):9090"
-echo "  Grafana:      http://$(hostname -I | awk '{print $1}'):3001 (admin/changeme)"
-echo "  Gitea:        http://$(hostname -I | awk '{print $1}'):3000"
-echo "  Vaultwarden:  http://$(hostname -I | awk '{print $1}'):8080"
+echo "  Prometheus:   https://$(hostname -I | awk '{print $1}'):9090"
+echo "  Grafana:      https://$(hostname -I | awk '{print $1}'):3001 (admin/changeme)"
+echo "  Gitea:        https://$(hostname -I | awk '{print $1}'):3000"
+echo "  Infisical:    https://$(hostname -I | awk '{print $1}'):8080"
 echo ""
 echo "Next steps:"
-echo "  1. Configure Grafana: Add Prometheus datasource, import dashboards (1860, 7249)"
-echo "  2. Set up Vaultwarden: Create admin account, then disable signups in docker-compose.yml"
-echo "  3. Set Discord webhook: crontab -e and uncomment/update DISCORD_WEBHOOK line"
-echo "  4. Update alertmanager.yml with your Discord webhook URL"
-echo "  5. Test: curl http://localhost:9090/api/v1/targets"
+echo "  1. Generate Infisical keys: openssl rand -hex 32 (run twice)"
+echo "  2. Update docker-compose.yml with ENCRYPTION_KEY and AUTH_SECRET"
+echo "  3. Restart Infisical: docker compose restart infisical"
+echo "  4. Configure Grafana: Add Prometheus datasource, import dashboards (1860, 7249)"
+echo "  5. Set Discord webhook: crontab -e and uncomment/update DISCORD_WEBHOOK line"
+echo "  6. Update alertmanager.yml with your Discord webhook URL"
+echo "  7. Test: curl http://localhost:9090/api/v1/targets"
 echo ""
