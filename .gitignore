@@ -6,3 +6,18 @@ secrets/
 *.key
 *.pem
 .DS_Store
+
+# Data directories (created on mini PC)
+gitea/
+vaultwarden/
+
+# Logs
+*.log
+
+# Swap files
+*.swp
+*.swo
+
+# Credentials
+credentials.yml
+.vault_pass
