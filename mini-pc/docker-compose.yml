@@ -67,16 +67,30 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  infisical-redis:
+    image: redis:7-alpine
+    container_name: infisical-redis
+    volumes:
+      - infisical-redis-data:/data
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   infisical:
     image: infisical/infisical:latest
     container_name: infisical
     environment:
       - DB_CONNECTION_URI=postgres://infisical:infisical@infisical-db:5432/infisical
+      - REDIS_URL=redis://infisical-redis:6379
       - ENCRYPTION_KEY=CHANGE_ME_32_CHAR_HEX  # Generate with: openssl rand -hex 32
       - AUTH_SECRET=CHANGE_ME_32_CHAR_HEX     # Generate with: openssl rand -hex 32
       - SITE_URL=https://lenny:8080
     depends_on:
       - infisical-db
+      - infisical-redis
     expose:
       - "8080"
     restart: unless-stopped
@@ -146,3 +160,4 @@ volumes:
   prometheus-data:
   grafana-data:
   infisical-db-data:
+  infisical-redis-data:

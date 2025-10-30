@@ -64,7 +64,7 @@ sudo ufw --force enable
 sudo ufw allow 22/tcp    # SSH
 sudo ufw allow 3000/tcp  # Gitea HTTP
 sudo ufw allow 2222/tcp  # Gitea SSH
-sudo ufw allow 8080/tcp  # Vaultwarden
+sudo ufw allow 8080/tcp  # Infisical
 sudo ufw allow 9090/tcp  # Prometheus
 sudo ufw allow 3001/tcp  # Grafana
 sudo ufw allow 9093/tcp  # Alertmanager
