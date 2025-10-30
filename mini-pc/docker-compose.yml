@@ -1,6 +1,31 @@
 version: '3.8'
 
 services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../certs:/etc/nginx/certs:ro
+    ports:
+      - "3000:3000"   # Gitea HTTPS
+      - "3001:3001"   # Grafana HTTPS
+      - "8080:8080"   # Vaultwarden HTTPS
+      - "9090:9090"   # Prometheus HTTPS
+      - "9093:9093"   # Alertmanager HTTPS
+    depends_on:
+      - gitea
+      - vaultwarden
+      - prometheus
+      - grafana
+      - alertmanager
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   gitea:
     image: gitea/gitea:latest
     container_name: gitea
@@ -8,15 +33,17 @@ services:
       - USER_UID=1000
       - USER_GID=1000
       - GITEA__database__DB_TYPE=sqlite3
-      - GITEA__server__DOMAIN=mini-pc
-      - GITEA__server__ROOT_URL=http://mini-pc:3000/
+      - GITEA__server__DOMAIN=lenny
+      - GITEA__server__ROOT_URL=https://lenny:3000/
+      - GITEA__server__PROTOCOL=https
     volumes:
       - ../gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    expose:
+      - "3000"
     ports:
-      - "3000:3000"
-      - "2222:22"
+      - "2222:22"  # SSH still exposed directly
     restart: unless-stopped
     logging:
       driver: json-file
@@ -29,12 +56,13 @@ services:
     container_name: vaultwarden
     volumes:
       - ../vaultwarden:/data
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
     environment:
       - SIGNUPS_ALLOWED=true  # Set to false after creating first account
       - INVITATIONS_ALLOWED=false
       - WEBSOCKET_ENABLED=true
+      - DOMAIN=https://lenny:8080
     restart: unless-stopped
     logging:
       driver: json-file
@@ -55,8 +83,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=7d'
       - '--web.enable-lifecycle'
-    ports:
-      - "9090:9090"
+    expose:
+      - "9090"
     restart: unless-stopped
     logging:
       driver: json-file
@@ -72,9 +100,9 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=changeme
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://mini-pc:3001
-    ports:
-      - "3001:3000"
+      - GF_SERVER_ROOT_URL=https://lenny:3001
+    expose:
+      - "3000"
     restart: unless-stopped
     logging:
       driver: json-file
@@ -89,8 +117,8 @@ services:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
-    ports:
-      - "9093:9093"
+    expose:
+      - "9093"
     restart: unless-stopped
     logging:
       driver: json-file

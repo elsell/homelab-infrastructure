@@ -19,30 +19,51 @@ bash <(curl -fsSL https://raw.githubusercontent.com/elsell/homelab-infrastructur
 
 ## Services
 
-After bootstrap, the following services will be running:
+After bootstrap, the following services will be running with HTTPS:
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| Gitea | 3000, 2222 | Infrastructure code mirror |
-| Vaultwarden | 8080 | Secrets management (Bitwarden compatible) |
-| Prometheus | 9090 | Metrics collection |
-| Grafana | 3001 | Dashboards (login: admin/changeme) |
-| Alertmanager | 9093 | Alert routing |
+| Service | Port | URL | Purpose |
+|---------|------|-----|---------|
+| Gitea | 3000, 2222 | https://lenny:3000 | Infrastructure code mirror |
+| Vaultwarden | 8080 | https://lenny:8080 | Secrets management (Bitwarden compatible) |
+| Prometheus | 9090 | https://lenny:9090 | Metrics collection |
+| Grafana | 3001 | https://lenny:3001 | Dashboards (login: admin/changeme) |
+| Alertmanager | 9093 | https://lenny:9093 | Alert routing |
+| nginx | - | - | Reverse proxy with self-signed SSL |
+
+**Note**: All services use self-signed certificates. Your browser will show a security warning - this is expected.
 
 ## Post-Bootstrap
 
-1. **Configure Grafana**:
+1. **Trust the self-signed certificate** (optional but recommended):
+   ```bash
+   # On macOS:
+   sudo security add-trusted-cert -d -r trustRoot \
+     -k /Library/Keychains/System.keychain \
+     /opt/homelab/certs/nginx-selfsigned.crt
+
+   # On Linux:
+   sudo cp /opt/homelab/certs/nginx-selfsigned.crt \
+     /usr/local/share/ca-certificates/lenny.crt
+   sudo update-ca-certificates
+
+   # Or just accept the browser warning each time
+   ```
+
+2. **Configure Grafana**:
+   - Access https://lenny:3001 (accept certificate warning)
+   - Login: admin / changeme
    - Add Prometheus datasource: `http://prometheus:9090`
    - Import dashboards: 1860 (Node Exporter), 7249 (K8s)
 
-2. **Set up Vaultwarden**:
-   - Create admin account at http://192.168.2.228:8080
+3. **Set up Vaultwarden**:
+   - Access https://lenny:8080 (accept certificate warning)
+   - Create admin account
    - Set `SIGNUPS_ALLOWED=false` in docker-compose.yml
    - Restart: `docker compose restart vaultwarden`
 
-3. **Update Alert URLs**:
+4. **Update Alert URLs**:
    - Edit `alertmanager.yml` with your Discord webhook URL
-   - Edit `../scripts/disk-alert.sh` with your Discord webhook URL
+   - Add `DISCORD_WEBHOOK` to crontab for disk-alert.sh
 
 ## Maintenance
 

@@ -107,6 +107,17 @@ cp /opt/homelab/scripts/*.sh /opt/homelab/scripts/ 2>/dev/null || true
 # Make scripts executable
 chmod +x /opt/homelab/scripts/*.sh 2>/dev/null || true
 chmod +x /opt/homelab-dr/scripts/*.sh 2>/dev/null || true
+chmod +x /opt/homelab/mini-pc/generate-certs.sh 2>/dev/null || true
+
+# Generate self-signed certificates for nginx
+if [ ! -f "/opt/homelab/certs/nginx-selfsigned.crt" ]; then
+  log_info "Generating self-signed SSL certificates..."
+  sudo mkdir -p /opt/homelab/certs
+  sudo /opt/homelab/mini-pc/generate-certs.sh
+  sudo chown -R $USER:$USER /opt/homelab/certs
+else
+  log_info "SSL certificates already exist, skipping generation"
+fi
 
 # Deploy Docker services
 log_info "Deploying Docker services..."
