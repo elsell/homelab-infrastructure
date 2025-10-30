@@ -1,0 +1,8 @@
+*.tfstate*
+.terraform/
+terraform.tfvars
+*.retry
+secrets/
+*.key
+*.pem
+.DS_Store
