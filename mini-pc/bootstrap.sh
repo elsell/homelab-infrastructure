@@ -94,8 +94,10 @@ fi
 
 # Create directory structure
 log_info "Creating directory structure..."
-sudo mkdir -p /opt/homelab-dr/{mirrors,scripts}
-sudo mkdir -p /opt/homelab/{vaultwarden,gitea}
+sudo mkdir -p /opt/homelab-dr/mirrors
+sudo mkdir -p /opt/homelab-dr/scripts
+sudo mkdir -p /opt/homelab/vaultwarden
+sudo mkdir -p /opt/homelab/gitea
 sudo chown -R $USER:$USER /opt/homelab /opt/homelab-dr
 
 # Copy scripts to DR location
