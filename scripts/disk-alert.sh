@@ -14,8 +14,8 @@ if [ "$USAGE" -gt "$THRESHOLD" ]; then
 
   # Send to Discord if webhook is configured
   if [ -n "$DISCORD_WEBHOOK" ]; then
-    # Use printf and jq for proper JSON encoding
-    PAYLOAD=$(printf '{"text":"%s"}' "$MESSAGE")
+    # Discord native format uses "content" not "text"
+    PAYLOAD=$(printf '{"content":"%s"}' "$MESSAGE")
     curl -X POST -H 'Content-type: application/json' \
       --data "$PAYLOAD" \
       "$DISCORD_WEBHOOK" 2>/dev/null

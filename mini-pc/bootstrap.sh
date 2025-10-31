@@ -142,7 +142,7 @@ crontab -l > "$CRON_TEMP" 2>/dev/null || true
 if ! grep -q "DISCORD_WEBHOOK=" "$CRON_TEMP"; then
   cat >> "$CRON_TEMP" <<'EOF'
 # Discord webhook for alerts (replace with your actual webhook URL)
-# DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN/slack
+# DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN
 
 EOF
 fi
