@@ -6,6 +6,16 @@ rule_files:
   - alert-rules.yml
 
 scrape_configs:
+  - job_name: "home-assistant"
+    metrics_path: /api/prometheus
+
+    # Long-lived access token
+    bearer_token: "CHANGE_ME"
+
+    scheme: http
+
+    static_configs:
+      - targets: ["home.jsk:8123"]
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
@@ -13,14 +23,20 @@ scrape_configs:
   - job_name: "node-exporter"
     static_configs:
       - targets:
-          - "lenny:9100"      # Mini PC
-          - "don.jsk:9100"    # XCP-ng dom0 (Dell R720XD hypervisor)
-          - "home.jsk:9100"   # Home Assistant VM
-          - "xen.jsk:9100"    # Xen Orchestra VM
-        # Add more as needed:
-        # - '192.168.2.21:9100'  # TrueNAS
-        # - '192.168.2.30:9100'  # K8s Dev
-        # - '192.168.2.31:9100'  # K8s Prod
+          - "lenny:9100" # Mini PC
+          - "don.jsk:9100" # XCP-ng dom0 (Dell R720XD hypervisor)
+          - "xen.jsk:9100" # Xen Orchestra VM
+        # Add more as Ubuntu VMs are configured:
+        # - '192.168.2.9:9100'   # Cloudflare Tunnel
+        # - '192.168.2.96:9100'  # Bare Metal Docker
+        # - '192.168.2.92:9100'  # K8s Dev
+        # - '192.168.2.95:9100'  # K8s Prod
+
+  - job_name: "home-assistant"
+    metrics_path: "/api/prometheus"
+    static_configs:
+      - targets:
+          - "home.jsk:8123" # Home Assistant (uses Prometheus integration, not node-exporter)
 
   - job_name: "kube-state-metrics"
     static_configs:
