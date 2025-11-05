@@ -32,12 +32,6 @@ scrape_configs:
         # - '192.168.2.92:9100'  # K8s Dev
         # - '192.168.2.95:9100'  # K8s Prod
 
-  - job_name: "home-assistant"
-    metrics_path: "/api/prometheus"
-    static_configs:
-      - targets:
-          - "home.jsk:8123" # Home Assistant (uses Prometheus integration, not node-exporter)
-
   - job_name: "kube-state-metrics"
     static_configs:
       - targets:
