@@ -44,7 +44,7 @@ if [ -d "$MIRROR_DIR/infra.git" ]; then
   fi
 else
   # Try to clone from Gitea (may fail if not set up yet)
-  git clone --mirror ssh://git@git.jsk:2222:local-k8s/infra.git \
+  git clone --mirror ssh://git@git.jsk:2222/local-k8s/infra.git \
     "$MIRROR_DIR/infra.git" >> "$LOGFILE" 2>&1
   if [ $? -eq 0 ]; then
     log "✓ infra cloned successfully"
