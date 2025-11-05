@@ -42,7 +42,7 @@ That's it. The script will:
 **Infisical** (https://lenny:8080)
 ```bash
 # Generate encryption keys:
-openssl rand -hex 32  # Copy for ENCRYPTION_KEY
+openssl rand -hex 16  # Copy for ENCRYPTION_KEY
 openssl rand -hex 32  # Copy for AUTH_SECRET
 
 # Update docker-compose.yml with generated keys
