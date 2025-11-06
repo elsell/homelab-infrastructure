@@ -98,7 +98,7 @@ Send Names Instead Of IDs: ✓ (checked)
 Matching Charts:         (leave blank or use *)
 
 # Verify metrics are flowing (after ~60 seconds):
-curl http://192.168.2.228:9109/metrics | grep truenas
+curl http://192.168.2.228:9108/metrics | grep truenas
 ```
 
 **Verify Services**
