@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   nginx:
@@ -8,11 +8,11 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ../certs:/etc/nginx/certs:ro
     ports:
-      - "3000:3000"   # Gitea HTTPS
-      - "3001:3001"   # Grafana HTTPS
-      - "8080:8080"   # Infisical HTTPS
-      - "9090:9090"   # Prometheus HTTPS
-      - "9093:9093"   # Alertmanager HTTPS
+      - "3000:3000" # Gitea HTTPS
+      - "3001:3001" # Grafana HTTPS
+      - "8080:8080" # Infisical HTTPS
+      - "9090:9090" # Prometheus HTTPS
+      - "9093:9093" # Alertmanager HTTPS
     depends_on:
       - gitea
       - infisical
@@ -43,7 +43,7 @@ services:
     expose:
       - "3000"
     ports:
-      - "2222:22"  # SSH still exposed directly
+      - "2222:22" # SSH still exposed directly
     restart: unless-stopped
     logging:
       driver: json-file
@@ -85,8 +85,8 @@ services:
     environment:
       - DB_CONNECTION_URI=postgres://infisical:infisical@infisical-db:5432/infisical
       - REDIS_URL=redis://infisical-redis:6379
-      - ENCRYPTION_KEY=CHANGE_ME_32_CHARS  # Generate with: openssl rand -hex 16 (32 hex chars)
-      - AUTH_SECRET=CHANGE_ME_BASE64       # Generate with: openssl rand -base64 32
+      - ENCRYPTION_KEY=CHANGE_ME_32_CHARS # Generate with: openssl rand -hex 16 (32 hex chars)
+      - AUTH_SECRET=CHANGE_ME_BASE64 # Generate with: openssl rand -base64 32
       - SITE_URL=https://lenny:8080
     depends_on:
       - infisical-db
@@ -109,10 +109,10 @@ services:
       - ./alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
       - prometheus-data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=7d'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
     expose:
       - "9090"
     restart: unless-stopped
@@ -146,7 +146,7 @@ services:
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
     expose:
       - "9093"
     restart: unless-stopped
@@ -160,14 +160,14 @@ services:
     image: prom/graphite-exporter:latest
     container_name: graphite-exporter
     command:
-      - '--graphite.mapping-config=/tmp/graphite_mapping.yml'
+      - "--graphite.mapping-config=/tmp/graphite_mapping.yml"
     volumes:
       - ./graphite_mapping.yml:/tmp/graphite_mapping.yml:ro
+    expose:
+      - "9109" # Metrics endpoint for Prometheus (internal)
     ports:
-      - "9109:9109"  # Metrics endpoint for Prometheus
-      - "9109:9109/udp"  # Graphite UDP receiver (optional)
-      - "2003:2003"  # Graphite TCP receiver (TrueNAS will send here)
-      - "2003:2003/udp"  # Graphite UDP receiver
+      - "2003:2003" # Graphite TCP receiver (TrueNAS will send here)
+      - "2003:2003/udp" # Graphite UDP receiver
     restart: unless-stopped
     logging:
       driver: json-file
