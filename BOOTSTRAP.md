@@ -34,9 +34,14 @@ That's it. The script will:
 ```bash
 # Login: admin / changeme
 # Add Prometheus datasource: http://prometheus:9090
-# Import dashboards:
-#   - Node Exporter Full (ID: 1860)
-#   - Kubernetes Cluster Monitoring (ID: 7249)
+
+# Import custom dashboards from grafana-dashboards/ directory:
+#   - infrastructure-overview.json - Single pane of glass for ALL hosts
+#   - home-assistant.json - Home Assistant monitoring
+#
+# Optional community dashboards:
+#   - Node Exporter Full (ID: 1860) - Detailed single-host metrics
+#   - Kubernetes Cluster Monitoring (ID: 7249) - K8s overview
 ```
 
 **Infisical** (https://lenny:8080)
@@ -83,6 +88,39 @@ docker-compose ps  # All should be "Up"
 # Check Prometheus targets
 curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
 ```
+
+**How Auto-Alerting Works**
+
+The alert rules in `alert-rules.yml` are **automatically applied to any new host** you add to Prometheus! No need to update alert configs when adding VMs.
+
+How it works:
+```yaml
+# This query matches ANY node-exporter target with low disk
+expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.10
+
+# This query matches ANY scrape target that's down
+expr: up{job="node-exporter"} == 0
+
+# Template variables show which host triggered the alert
+summary: "Host {{ $labels.instance }} is down"
+```
+
+**To add a new monitored host**:
+1. Add to `prometheus.yml`:
+   ```yaml
+   - job_name: "node-exporter"
+     static_configs:
+       - targets:
+           - "lenny:9100"
+           - "don.jsk:9100"
+           - "your-new-host:9100"  # <-- Add here
+   ```
+2. Restart Prometheus: `docker compose restart prometheus`
+3. That's it! All alerts (disk, CPU, memory, host down) now monitor the new host automatically.
+
+**Available auto-alerts**:
+- 🚨 **Critical**: Host down, disk >90%, battery <10%
+- ⚠️ **Warning**: Disk >80%, CPU >80%, memory <10%, high load, battery <20%, Home Assistant down
 
 ---
 
