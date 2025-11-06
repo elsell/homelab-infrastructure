@@ -1,0 +1,39 @@
+# Graphite to Prometheus metric mapping for TrueNAS
+# This maps TrueNAS metric names to proper Prometheus format
+
+mappings:
+  # CPU metrics
+  - match: "truenas.cpu.*.*"
+    name: "truenas_cpu_${2}"
+    labels:
+      cpu: "$1"
+
+  # Memory metrics
+  - match: "truenas.memory.*"
+    name: "truenas_memory_${1}"
+
+  # Disk metrics
+  - match: "truenas.disk.*.io.*"
+    name: "truenas_disk_io_${2}"
+    labels:
+      device: "$1"
+
+  # Network metrics
+  - match: "truenas.network.*.traffic.*"
+    name: "truenas_network_traffic_${2}_bytes"
+    labels:
+      interface: "$1"
+
+  # ZFS metrics
+  - match: "truenas.zfs.pool.*.space.*"
+    name: "truenas_zfs_pool_space_${2}_bytes"
+    labels:
+      pool: "$1"
+
+  # System metrics
+  - match: "truenas.system.*"
+    name: "truenas_system_${1}"
+
+  # Catch-all for any other TrueNAS metrics
+  - match: "truenas.*"
+    name: "truenas_${1}"

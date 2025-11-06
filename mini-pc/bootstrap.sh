@@ -69,6 +69,7 @@ sudo ufw allow 9090/tcp  # Prometheus
 sudo ufw allow 3001/tcp  # Grafana
 sudo ufw allow 9093/tcp  # Alertmanager
 sudo ufw allow 9100/tcp  # node-exporter
+sudo ufw allow 2003/tcp  # Graphite receiver for TrueNAS metrics
 log_info "Firewall configured and enabled"
 
 # Ensure node-exporter is running

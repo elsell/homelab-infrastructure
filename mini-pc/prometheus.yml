@@ -26,14 +26,18 @@ scrape_configs:
           - "lenny:9100" # Mini PC
           - "don.jsk:9100" # XCP-ng dom0 (Dell R720XD hypervisor)
           - "xen.jsk:9100" # Xen Orchestra VM
-        # Add more as Ubuntu VMs are configured:
-        # - '192.168.2.9:9100'   # Cloudflare Tunnel
-        # - '192.168.2.96:9100'  # Bare Metal Docker
-        # - '192.168.2.92:9100'  # K8s Dev
-        # - '192.168.2.95:9100'  # K8s Prod
+          - "192.168.2.9:9100" # Cloudflare Tunnel
+          - "192.168.2.96:9100" # Bare Metal Docker
+          - "192.168.2.92:9100" # K8s Dev
+          - "192.168.2.95:9100" # K8s Prod
 
   - job_name: "kube-state-metrics"
     static_configs:
       - targets:
         # - '192.168.2.30:8080'  # K8s Dev (uncomment when deployed)
         # - '192.168.2.31:8080'  # K8s Prod (uncomment when deployed)
+
+  - job_name: "truenas"
+    static_configs:
+      - targets:
+          - "localhost:9109" # Graphite exporter receiving from TrueNAS
