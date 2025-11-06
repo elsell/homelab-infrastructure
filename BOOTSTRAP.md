@@ -24,7 +24,7 @@ That's it. The script will:
 - Install Docker, node-exporter, git
 - Configure log rotation
 - Clone your infrastructure repo
-- Deploy all services (Gitea, Infisical, Prometheus, Grafana, Alertmanager)
+- Deploy all services (Gitea, Infisical, Prometheus, Grafana, Alertmanager, Graphite Exporter)
 - Set up cron jobs (repo sync, disk cleanup)
 - Create necessary directories
 
@@ -79,6 +79,28 @@ nano alertmanager.yml
 docker compose restart alertmanager
 ```
 
+**TrueNAS Graphite Metrics** (https://truenas.jsk)
+```bash
+# Configure TrueNAS to send metrics to mini PC
+# In TrueNAS Web UI: System → Reporting → Add Reporting Exporter
+
+# Fill in the form:
+Name:                    prometheus
+Type:                    GRAPHITE
+Enable:                  ✓ (checked)
+Destination IP:          192.168.2.228  # Mini PC IP
+Destination Port:        2003
+Prefix:                  truenas
+Namespace:               truenas
+Update Every:            60  # seconds
+Buffer On Failures:      ✓ (checked)
+Send Names Instead Of IDs: ✓ (checked)
+Matching Charts:         (leave blank or use *)
+
+# Verify metrics are flowing (after ~60 seconds):
+curl http://192.168.2.228:9109/metrics | grep truenas
+```
+
 **Verify Services**
 ```bash
 ssh john@192.168.2.228
@@ -86,7 +108,7 @@ cd /opt/homelab/mini-pc
 docker-compose ps  # All should be "Up"
 
 # Check Prometheus targets
-curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
+curl -k https://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
 ```
 
 **How Auto-Alerting Works**
