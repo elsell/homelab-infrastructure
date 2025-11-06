@@ -1,51 +1,115 @@
+# These alert rules automatically apply to ANY target scraped by Prometheus.
+# No need to update alerts when adding new hosts - they're auto-discovered!
+#
+# How it works:
+# - Queries without instance/job filters match ALL targets
+# - {{ $labels.instance }} template shows which host triggered the alert
+# - Add a new scrape target to prometheus.yml → alerts auto-apply
+
 groups:
   - name: disk_alerts
     interval: 60s
     rules:
       - alert: DiskCritical
-        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.10
+        # Matches ANY node-exporter target with low disk space
+        expr: (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|fuse.*"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|fuse.*"}) < 0.10
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Critical disk usage on {{ $labels.instance }}"
-          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+          summary: "🚨 Critical disk usage on {{ $labels.instance }}"
+          description: "Only {{ $value | humanizePercentage }} free on {{ $labels.instance }} ({{ $labels.mountpoint }})"
 
       - alert: DiskWarning
-        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.20
+        # Matches ANY node-exporter target with moderate disk usage
+        expr: (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|fuse.*"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|fuse.*"}) < 0.20
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "High disk usage on {{ $labels.instance }}"
-          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+          summary: "⚠️ High disk usage on {{ $labels.instance }}"
+          description: "Only {{ $value | humanizePercentage }} free on {{ $labels.instance }} ({{ $labels.mountpoint }})"
 
   - name: host_alerts
     interval: 60s
     rules:
       - alert: HostDown
-        expr: up == 0
+        # Matches ANY scrape target that's unreachable
+        expr: up{job="node-exporter"} == 0
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Host {{ $labels.instance }} is down"
+          summary: "🚨 Host {{ $labels.instance }} is DOWN"
           description: "{{ $labels.instance }} has been unreachable for more than 5 minutes"
 
       - alert: HighCPU
+        # Matches ANY node-exporter target with high CPU
         expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "High CPU usage on {{ $labels.instance }}"
-          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+          summary: "⚠️ High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}% on {{ $labels.instance }}"
 
       - alert: HighMemory
+        # Matches ANY node-exporter target with low memory
         expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.10
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High memory usage on {{ $labels.instance }}"
-          description: "Available memory is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+          summary: "⚠️ High memory usage on {{ $labels.instance }}"
+          description: "Only {{ $value | humanizePercentage }} available on {{ $labels.instance }}"
+
+      - alert: HostHighLoad
+        # Matches ANY node-exporter target with high load average
+        expr: node_load15 / count(node_cpu_seconds_total{mode="idle"}) without(cpu,mode) > 2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ High load average on {{ $labels.instance }}"
+          description: "Load average is {{ $value | printf \"%.2f\" }} on {{ $labels.instance }}"
+
+  - name: home_assistant_alerts
+    interval: 60s
+    rules:
+      - alert: HomeAssistantDown
+        expr: up{job="home-assistant"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "🚨 Home Assistant is DOWN"
+          description: "Home Assistant has been unreachable for more than 5 minutes"
+
+      - alert: HomeAssistantHighMemory
+        expr: process_resident_memory_bytes{job="home-assistant"} > 1000000000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ Home Assistant high memory usage"
+          description: "Home Assistant is using {{ $value | humanize1024 }} of memory"
+
+      - alert: LowBattery
+        # Matches ANY battery sensor below 20%
+        expr: homeassistant_sensor_battery_percent < 20
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "🔋 Low battery: {{ $labels.friendly_name }}"
+          description: "{{ $labels.friendly_name }} battery is at {{ $value }}%"
+
+      - alert: CriticalBattery
+        # Matches ANY battery sensor below 10%
+        expr: homeassistant_sensor_battery_percent < 10
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "🚨 Critical battery: {{ $labels.friendly_name }}"
+          description: "{{ $labels.friendly_name }} battery is at {{ $value }}% - replace immediately!"
