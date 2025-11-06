@@ -2,7 +2,7 @@
 - hosts: ubuntu_vms,k8s_nodes
   become: true
   tasks:
-    - name: Install node-exporter and ufw
+    - name: Install packages
       apt:
         name:
           - prometheus-node-exporter
@@ -10,16 +10,39 @@
         state: present
         update_cache: yes
 
+    - name: Create journald config directory
+      file:
+        path: /etc/systemd/journald.conf.d
+        state: directory
+        mode: "0755"
+
+    - name: Configure journald log limits
+      copy:
+        dest: /etc/systemd/journald.conf.d/99-disk-management.conf
+        content: |
+          [Journal]
+          SystemMaxUse=500M
+          MaxRetentionSec=7day
+          MaxFileSec=1day
+        mode: "0644"
+      register: journald_config
+
+    - name: Restart journald if config changed
+      systemd:
+        name: systemd-journald
+        state: restarted
+      when: journald_config.changed
+
     - name: Allow SSH through firewall (prevent lockout)
       ufw:
         rule: allow
-        port: '22'
+        port: "22"
         proto: tcp
 
     - name: Allow node-exporter from Prometheus mini PC only
       ufw:
         rule: allow
-        port: '9100'
+        port: "9100"
         proto: tcp
         from_ip: 192.168.2.228
 
