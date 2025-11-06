@@ -164,10 +164,11 @@ services:
     volumes:
       - ./graphite_mapping.yml:/tmp/graphite_mapping.yml:ro
     expose:
-      - "9109" # Metrics endpoint for Prometheus (internal)
+      - "9108" # Metrics endpoint for Prometheus (internal)
     ports:
       - "2003:2003" # Graphite TCP receiver (TrueNAS will send here)
       - "2003:2003/udp" # Graphite UDP receiver
+      - "9108:9108" # Expose metrics externally for debugging
     restart: unless-stopped
     logging:
       driver: json-file
