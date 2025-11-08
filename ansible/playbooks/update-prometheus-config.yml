@@ -1,0 +1,24 @@
+---
+- name: Update Prometheus Configuration from Ansible Inventory
+  hosts: mini_pc
+  become: false # Run as user, not root (user owns /opt/homelab and is in docker group)
+  vars:
+    mini_pc_dir: "/opt/homelab/mini-pc"
+  tasks:
+    - name: Generate prometheus.yml from Ansible inventory
+      template:
+        src: ../templates/prometheus.yml.j2
+        dest: "{{ mini_pc_dir }}/prometheus.yml"
+        mode: "0644"
+        backup: yes
+      register: prometheus_config
+
+    - name: Restart Prometheus if config changed
+      command: docker  compose restart prometheus
+      args:
+        chdir: "{{ mini_pc_dir }}"
+      when: prometheus_config.changed
+
+    - name: Show result
+      debug:
+        msg: "Prometheus config {{ 'updated and restarted' if prometheus_config.changed else 'unchanged' }}"
