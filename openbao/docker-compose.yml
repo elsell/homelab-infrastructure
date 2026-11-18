@@ -15,14 +15,41 @@ services:
     security_opt: [no-new-privileges:true]
     restart: "no"
 
+  # Tailscale sidecar (tag:secrets): OpenBao shares only this container's network namespace, so it can
+  # reach tsidp (homelab-idp) for sign-in. The tailnet policy lets tag:secrets reach tsidp's 443 only.
+  # It also publishes 443 on lenny's LAN address.
+  tailscale:
+    image: tailscale/tailscale:v1.104.7@sha256:72c1e19e0aedca96b8533bbb0b4368564410ff20b17e53b804eb6c1f04a31be4
+    hostname: secrets
+    environment:
+      TS_AUTHKEY: file:/authkey/authkey
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_ACCEPT_DNS: "false"
+      TS_EXTRA_ARGS: --advertise-tags=tag:secrets
+    # tsidp's tailnet address (stable for the node); MagicDNS isn't used inside this namespace.
+    extra_hosts:
+      - "homelab-idp.sawfish-balance.ts.net:100.72.69.80"
+    ports:
+      - "443:8200"
+    volumes:
+      - openbao-ts-state:/var/lib/tailscale
+      - openbao-ts-authkey:/authkey:ro
+    devices: [/dev/net/tun:/dev/net/tun]
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, NET_RAW]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
   openbao:
     image: quay.io/openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f
     command: ["server", "-config=/openbao/config/openbao.hcl"]
+    network_mode: "service:tailscale"
     depends_on:
       cert-init:
         condition: service_completed_successfully
-    ports:
-      - "443:8200"
+      tailscale:
+        condition: service_started
     volumes:
       - ./config:/openbao/config:ro
       - openbao-data:/openbao/file
@@ -58,4 +85,6 @@ volumes:
   openbao-data:
   openbao-tls:
   openbao-unseal: # unseal.key (32 bytes, uid 100, 0400), created once (README)
+  openbao-ts-state:
+  openbao-ts-authkey: # one-time pre-approved key for tag:secrets (README)
   openbao-cred: # token + ca.crt for the cluster's lenny-cert-reader account (README)
