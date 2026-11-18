@@ -18,3 +18,21 @@
     - name: Enable firewall
       ufw:
         state: enabled
+
+    # k8s-910-node (192.168.200.5, agent VLAN; infra repo terraform/k8s-910-node) joins as a worker:
+    # MicroK8s cluster agent and Calico VXLAN from that one address only.
+    - name: Allow the 910 worker's cluster agent traffic
+      ufw:
+        rule: allow
+        from_ip: 192.168.200.5
+        port: "25000"
+        proto: tcp
+        comment: "910 node: microk8s cluster agent"
+
+    - name: Allow the 910 worker's VXLAN
+      ufw:
+        rule: allow
+        from_ip: 192.168.200.5
+        port: "4789"
+        proto: udp
+        comment: "910 node: calico vxlan"
