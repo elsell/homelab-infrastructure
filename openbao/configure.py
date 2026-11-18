@@ -75,6 +75,11 @@ def main():
 
     oidc = ensure_auth("oidc", "oidc")
     userpass = ensure_auth("userpass", "userpass")
+    # Sign-in page: only OIDC (first, so the default) and username/password are listed. The built-in
+    # token method can't be disabled; the UI keeps it behind "other methods".
+    for path, desc in (("oidc", "Tailscale (tsidp)"), ("userpass", "Password (fallback when the identity provider is down)")):
+        api("POST", f"sys/auth/{path}/tune", {"listing_visibility": "unauth", "description": desc})
+    api("POST", "sys/auth/token/tune", {"listing_visibility": "hidden"})
     api("POST", "auth/oidc/config", {"oidc_discovery_url": ISSUER, "oidc_client_id": "openbao",
                                      "oidc_client_secret": keyring("service", "openclaw-sso", "purpose", "openbao-client-secret"),
                                      "default_role": "person"})
