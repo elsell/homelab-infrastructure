@@ -1,0 +1,61 @@
+# OpenBao at https://secrets.jsksell.com (lenny, port 443). Its own compose project: starting or
+# updating the mini-pc stack never touches it. README.md for setup, unseal key and recovery.
+name: openbao
+services:
+  cert-init:
+    image: python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
+    user: "100:1000"
+    command: ["python", "/cert-sync.py", "--once"]
+    volumes:
+      - ./cert-sync.py:/cert-sync.py:ro
+      - openbao-cred:/cred:ro
+      - openbao-tls:/tls
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+
+  openbao:
+    image: quay.io/openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f
+    command: ["server", "-config=/openbao/config/openbao.hcl"]
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
+    ports:
+      - "443:8200"
+    volumes:
+      - ./config:/openbao/config:ro
+      - openbao-data:/openbao/file
+      - openbao-tls:/openbao/tls:ro
+      - openbao-unseal:/openbao/unseal:ro
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "bao", "status", "-address=https://127.0.0.1:8200", "-tls-server-name=secrets.jsksell.com"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  cert-sync:
+    image: python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
+    user: "100:1000"
+    pid: "service:openbao" # to SIGHUP OpenBao after a renewal
+    command: ["python", "/cert-sync.py"]
+    depends_on: [openbao]
+    volumes:
+      - ./cert-sync.py:/cert-sync.py:ro
+      - openbao-cred:/cred:ro
+      - openbao-tls:/tls
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+volumes:
+  openbao-data:
+  openbao-tls:
+  openbao-unseal: # unseal.key (32 bytes, uid 100, 0400), created once (README)
+  openbao-cred: # token + ca.crt for the cluster's lenny-cert-reader account (README)
