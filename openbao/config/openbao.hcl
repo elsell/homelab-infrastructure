@@ -22,3 +22,10 @@ seal "static" {
   current_key_id = "lenny-2026-11-18"
   current_key    = "file:///openbao/unseal/unseal.key"
 }
+
+# Every request, with secrets HMAC'd, to the container log: docker compose logs openbao.
+audit "file" "stdout" {
+  options {
+    file_path = "stdout"
+  }
+}
