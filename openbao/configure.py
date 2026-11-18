@@ -108,7 +108,8 @@ def main():
                                                   "disable_local_ca_jwt": True})
     api("POST", "auth/kubernetes-homelab/role/910", {
         "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["910"],
-        "audience": "openbao", "token_policies": ["eso-910"], "token_ttl": "1h", "token_max_ttl": "1h"})
+        # No custom audience: the token also authenticates its own TokenReview to the API server.
+        "audience": "", "token_policies": ["eso-910"], "token_ttl": "1h", "token_max_ttl": "1h"})
 
     members = {"admins": [], "team-910": []}
     for person, (email, user, groups) in PEOPLE.items():
