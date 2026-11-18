@@ -25,6 +25,20 @@ ansible/
 
 **Important**: This inventory is the canonical source for all host definitions. Other configs (prometheus.yml, terraform, etc.) should be generated from or reference this inventory.
 
+## Terraform Integration
+
+Ansible inventory can generate Terraform configs to eliminate duplication. See [TERRAFORM-INTEGRATION.md](TERRAFORM-INTEGRATION.md) for full details.
+
+**Quick start:**
+```bash
+# Generate Terraform files from inventory
+ansible-playbook playbooks/generate-terraform-configs.yml
+```
+
+This generates:
+- `terraform/networking/locals.tf` - UniFi DHCP reservations
+- `terraform/xcp-ng/cloud-configs/*.yml` - Cloud-init configs
+
 ## Available Playbooks
 
 ### install-node-exporter.yml
@@ -46,6 +60,13 @@ ansible-playbook -i inventory/hosts.yml playbooks/install-node-exporter.yml -K
 # Run for specific group
 ansible-playbook -i inventory/hosts.yml playbooks/install-node-exporter.yml -K --limit ubuntu_vms
 ```
+
+**When to use:**
+- Configuring existing VMs that weren't created by Terraform
+- Updating configuration on existing VMs
+- Repairing config drift
+
+**Note:** VMs created via Terraform get this same configuration automatically via cloud-init. This playbook is for existing/legacy VMs or config updates.
 
 **Idempotent**: Safe to run multiple times, only makes changes if needed.
 
@@ -75,9 +96,33 @@ ansible-playbook -i inventory/hosts.yml playbooks/update-prometheus-config.yml -
 
 **Idempotent**: Safe to run multiple times, only restarts Prometheus if config actually changed.
 
+### generate-terraform-configs.yml
+
+Generates Terraform configuration files from Ansible inventory:
+- Creates `terraform/networking/locals.tf` with UniFi DHCP reservations
+- Generates cloud-init configs in `terraform/xcp-ng/cloud-configs/` for each VM
+- Uses inventory metadata: IPs, MACs, memory, CPU, usernames, ports
+
+**Usage:**
+```bash
+# Runs on localhost, no SSH needed
+ansible-playbook playbooks/generate-terraform-configs.yml
+```
+
+**Prerequisites:**
+- Add Terraform metadata to inventory (MAC addresses, vm_memory_gb, vm_cpus, vm_disk_gb)
+- See [TERRAFORM-INTEGRATION.md](TERRAFORM-INTEGRATION.md) for details
+
+**When to run:**
+- After adding new VMs to inventory with Terraform metadata
+- After changing VM specs (memory, CPU, disk)
+- After changing mini PC IP or firewall rules
+
+**Idempotent**: Safe to run multiple times, creates backups of previous files.
+
 ## Workflow Examples
 
-### Adding a New Host
+### Adding a New Host (Monitoring Only)
 
 1. Add to `inventory/hosts.yml`:
 ```yaml
@@ -99,6 +144,52 @@ ansible-playbook -i inventory/hosts.yml playbooks/update-prometheus-config.yml
 ```
 
 4. Verify in Prometheus UI: http://lenny:9090/targets
+
+### Adding a New VM (Full Infrastructure-as-Code)
+
+**Single source of truth approach - define VM once, generate everything:**
+
+1. Add to `inventory/hosts.yml` with full metadata:
+```yaml
+ubuntu_vms:
+  hosts:
+    new-service:
+      ansible_host: 192.168.2.100
+      node_exporter_port: 9100
+      # Terraform metadata:
+      mac_address: "52:54:00:AA:BB:CC"
+      vm_memory_gb: 4
+      vm_cpus: 2
+      vm_disk_gb: 50
+```
+
+2. Generate all configs from inventory:
+```bash
+# Generate Prometheus config
+ansible-playbook -i inventory/hosts.yml playbooks/update-prometheus-config.yml
+
+# Generate Terraform configs (DHCP + cloud-init)
+ansible-playbook playbooks/generate-terraform-configs.yml
+```
+
+3. Apply infrastructure:
+```bash
+# Apply DHCP reservation
+cd ../../terraform/networking
+terraform plan && terraform apply
+
+# Create VM with Terraform (if using Terraform for VMs)
+cd ../xcp-ng
+terraform plan && terraform apply
+```
+
+4. Verify:
+```bash
+# Check Prometheus: http://lenny:9090/targets
+# SSH to new VM: ssh john@192.168.2.100
+```
+
+**Result**: VM defined once in inventory, everything else auto-generated!
 
 ### Updating Home Assistant Bearer Token
 

@@ -105,7 +105,7 @@ curl http://192.168.2.228:9108/metrics | grep truenas
 ```bash
 ssh john@192.168.2.228
 cd /opt/homelab/mini-pc
-docker-compose ps  # All should be "Up"
+docker  compose ps  # All should be "Up"
 
 # Check Prometheus targets
 curl -k https://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
@@ -179,7 +179,7 @@ mkdir -p /opt/homelab/gitea
 
 # Deploy services
 cd /opt/homelab/mini-pc
-docker-compose up -d
+docker  compose up -d
 
 # Set up cron jobs
 crontab -e
@@ -204,7 +204,7 @@ sudo usermod -aG docker $USER
 **Services won't start**
 ```bash
 cd /opt/homelab/mini-pc
-docker-compose logs
+docker  compose logs
 # Check for errors
 ```
 

@@ -10,7 +10,9 @@ TLS = "/tls"
 
 def fetch():
     ctx = ssl.create_default_context(cafile=f"{CRED}/ca.crt")
-    ctx.check_hostname = False  # the API server's certificate names k8snode1, not this IP
+    # MicroK8s's CA has no key-usage extension, which Python 3.13's strict X.509 mode rejects;
+    # the chain and the server's IP SAN are still verified.
+    ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
     req = urllib.request.Request(API, headers={"Authorization": "Bearer " + open(f"{CRED}/token").read().strip()})
     with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
         data = json.load(r)["data"]
