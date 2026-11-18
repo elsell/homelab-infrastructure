@@ -64,6 +64,10 @@ path "910/undelete/*" { capabilities = ["update"] }
 path "910/data/*"     { capabilities = ["read"] }
 path "910/metadata/*" { capabilities = ["read", "list"] }
 """,
+    # Infra's own secrets (admin only), e.g. the 910 runners' GitHub App; runners read their one path.
+    "runners-910": """
+path "infra/data/runners/*" { capabilities = ["read"] }
+""",
     "self-password": 'path "auth/userpass/users/{{identity.entity.aliases.USERPASS.name}}/password" { capabilities = ["update"] }\n',
 }
 
@@ -96,7 +100,10 @@ def main():
     for name, body in POLICIES.items():
         api("PUT", f"sys/policies/acl/{name}", {"policy": body.replace("USERPASS", userpass)})
 
+    if "infra/" not in api("GET", "sys/mounts")["data"]:
+        api("POST", "sys/mounts/infra", {"type": "kv", "options": {"version": "2"}, "description": "infra secrets (admins only)"})
     if "910/" not in api("GET", "sys/mounts")["data"]:
+
         api("POST", "sys/mounts/910", {"type": "kv", "options": {"version": "2"}, "description": "910 team secrets"})
 
     # Kubernetes auth for the homelab cluster (MicroK8s, k8snode1). Each login's token reviews
@@ -110,6 +117,11 @@ def main():
         "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["910"],
         # No custom audience: the token also authenticates its own TokenReview to the API server.
         "audience": "", "token_policies": ["eso-910"], "token_ttl": "1h", "token_max_ttl": "1h"})
+
+    # Self-hosted runners (namespace 910-runners, infra-owned): read infra/runners/* only.
+    api("POST", "auth/kubernetes-homelab/role/910-runners", {
+        "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["910-runners"],
+        "audience": "", "token_policies": ["runners-910"], "token_ttl": "1h", "token_max_ttl": "1h"})
 
     members = {"admins": [], "team-910": []}
     for person, (email, user, groups) in PEOPLE.items():
