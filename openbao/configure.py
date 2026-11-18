@@ -9,6 +9,7 @@ secret from service openclaw-sso purpose openbao-client-secret. Nothing secret i
   openbao/configure.py --issue-infra-token  # also mint the long-lived admin token for automation
 """
 import json
+import os
 import secrets
 import subprocess
 import sys
@@ -58,6 +59,11 @@ path "910/delete/*"   { capabilities = ["update"] }
 path "910/undelete/*" { capabilities = ["update"] }
 """,
     # Everyone may set their own fallback password (userpass alias name = their username).
+    # External Secrets Operator in namespace 910 (role 910 below): read the 910 mount.
+    "eso-910": """
+path "910/data/*"     { capabilities = ["read"] }
+path "910/metadata/*" { capabilities = ["read", "list"] }
+""",
     "self-password": 'path "auth/userpass/users/{{identity.entity.aliases.USERPASS.name}}/password" { capabilities = ["update"] }\n',
 }
 
@@ -92,6 +98,17 @@ def main():
 
     if "910/" not in api("GET", "sys/mounts")["data"]:
         api("POST", "sys/mounts/910", {"type": "kv", "options": {"version": "2"}, "description": "910 team secrets"})
+
+    # Kubernetes auth for the homelab cluster (MicroK8s, k8snode1). Each login's token reviews
+    # itself (its account has system:auth-delegator), so OpenBao holds no long-lived cluster JWT.
+    ensure_auth("kubernetes-homelab", "kubernetes")
+    ca = subprocess.run(["kubectl", "--kubeconfig", os.path.expanduser("~/.kube/configs/local-don"), "-n", "kube-system", "get",
+                         "configmap", "kube-root-ca.crt", "-o", "jsonpath={.data.ca\\.crt}"], capture_output=True, text=True, check=True).stdout
+    api("POST", "auth/kubernetes-homelab/config", {"kubernetes_host": "https://192.168.2.92:16443", "kubernetes_ca_cert": ca,
+                                                  "disable_local_ca_jwt": True})
+    api("POST", "auth/kubernetes-homelab/role/910", {
+        "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["910"],
+        "audience": "openbao", "token_policies": ["eso-910"], "token_ttl": "1h", "token_max_ttl": "1h"})
 
     members = {"admins": [], "team-910": []}
     for person, (email, user, groups) in PEOPLE.items():
