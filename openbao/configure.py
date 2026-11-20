@@ -68,6 +68,10 @@ path "910/metadata/*" { capabilities = ["read", "list"] }
     "runners-910": """
 path "infra/data/runners/*" { capabilities = ["read"] }
 """,
+    # Argo CD (namespace argocd, infra-owned): its OIDC client secret, repo credentials and the like.
+    "argocd": """
+path "infra/data/argocd/*" { capabilities = ["read"] }
+""",
     "self-password": 'path "auth/userpass/users/{{identity.entity.aliases.USERPASS.name}}/password" { capabilities = ["update"] }\n',
 }
 
@@ -122,6 +126,11 @@ def main():
     api("POST", "auth/kubernetes-homelab/role/910-runners", {
         "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["910-runners"],
         "audience": "", "token_policies": ["runners-910"], "token_ttl": "1h", "token_max_ttl": "1h"})
+
+    # Argo CD (namespace argocd, infra-owned): read infra/argocd/* only.
+    api("POST", "auth/kubernetes-homelab/role/argocd", {
+        "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["argocd"],
+        "audience": "", "token_policies": ["argocd"], "token_ttl": "1h", "token_max_ttl": "1h"})
 
     members = {"admins": [], "team-910": []}
     for person, (email, user, groups) in PEOPLE.items():
