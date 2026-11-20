@@ -72,6 +72,10 @@ path "infra/data/runners/*" { capabilities = ["read"] }
     "argocd": """
 path "infra/data/argocd/*" { capabilities = ["read"] }
 """,
+    # Renovate (namespace renovate, infra-owned): its GitHub App and registry read tokens.
+    "renovate": """
+path "infra/data/renovate/*" { capabilities = ["read"] }
+""",
     "self-password": 'path "auth/userpass/users/{{identity.entity.aliases.USERPASS.name}}/password" { capabilities = ["update"] }\n',
 }
 
@@ -131,6 +135,11 @@ def main():
     api("POST", "auth/kubernetes-homelab/role/argocd", {
         "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["argocd"],
         "audience": "", "token_policies": ["argocd"], "token_ttl": "1h", "token_max_ttl": "1h"})
+
+    # Renovate (namespace renovate, infra-owned): read infra/renovate/* only.
+    api("POST", "auth/kubernetes-homelab/role/renovate", {
+        "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["renovate"],
+        "audience": "", "token_policies": ["renovate"], "token_ttl": "1h", "token_max_ttl": "1h"})
 
     members = {"admins": [], "team-910": []}
     for person, (email, user, groups) in PEOPLE.items():
