@@ -72,6 +72,10 @@ path "infra/data/runners/*" { capabilities = ["read"] }
     "argocd": """
 path "infra/data/argocd/*" { capabilities = ["read"] }
 """,
+    # Observability (namespace observability, infra-owned): Perses' OIDC client, the alert webhooks.
+    "observability": """
+path "infra/data/observability/*" { capabilities = ["read"] }
+""",
     # Renovate (namespace renovate, infra-owned): its GitHub App and registry read tokens.
     "renovate": """
 path "infra/data/renovate/*" { capabilities = ["read"] }
@@ -135,6 +139,11 @@ def main():
     api("POST", "auth/kubernetes-homelab/role/argocd", {
         "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["argocd"],
         "audience": "", "token_policies": ["argocd"], "token_ttl": "1h", "token_max_ttl": "1h"})
+
+    # Observability (namespace observability, infra-owned): read infra/observability/* only.
+    api("POST", "auth/kubernetes-homelab/role/observability", {
+        "bound_service_account_names": ["openbao-auth"], "bound_service_account_namespaces": ["observability"],
+        "audience": "", "token_policies": ["observability"], "token_ttl": "1h", "token_max_ttl": "1h"})
 
     # Renovate (namespace renovate, infra-owned): read infra/renovate/* only.
     api("POST", "auth/kubernetes-homelab/role/renovate", {
